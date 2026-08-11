@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insultómetro V2</title>
+<style>
+:root{--bg:#0b0d10;--panel:#15181e;--panel2:#1d2129;--text:#f7f6f1;--muted:#a3a9b3;--accent:#f2cf43;--border:#303641}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 10%,rgba(242,207,67,.11),transparent 30%),radial-gradient(circle at 80% 85%,rgba(70,105,180,.13),transparent 34%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;padding:24px;display:grid;place-items:center}
+.app{width:min(920px,100%)}.topline{display:flex;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}.badge,.mode{border:1px solid var(--border);background:#111419;color:var(--muted);padding:7px 11px;border-radius:999px;font-size:13px}
+h1{font-size:clamp(42px,8vw,78px);letter-spacing:-.06em;line-height:.9;margin:0 0 13px}.lead{margin:0 0 26px;color:var(--muted);max-width:760px;line-height:1.5}
+.card{background:linear-gradient(180deg,var(--panel),#101318);border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 28px 85px rgba(0,0,0,.38)}
+.insult{min-height:210px;border:1px dashed #3a414d;border-radius:18px;padding:28px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:850;font-size:clamp(25px,4.6vw,46px);line-height:1.08;letter-spacing:-.035em;background:rgba(255,255,255,.024)}
+.insult em{font-style:normal;color:var(--accent)}.controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+button{appearance:none;border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:14px 18px;border-radius:14px;font:inherit;font-weight:800;cursor:pointer}
+button.primary{flex:1;min-width:230px;background:var(--accent);color:#171717;border-color:transparent}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:20px}.stats div{border:1px solid var(--border);background:#101318;border-radius:12px;padding:10px 8px;text-align:center}.stats strong{display:block}.stats span{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.templates,.history{margin-top:18px}.templates{border-top:1px solid var(--border);padding-top:16px}.templates h2,.history h2{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin:0 0 10px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{background:#101318;border:1px solid var(--border);color:#c6cbd3;border-radius:999px;padding:6px 9px;font-size:11px}
+.history-list{display:grid;gap:8px}.history-item{padding:11px 13px;border-radius:12px;background:#101318;border:1px solid var(--border);color:#d9dce1;font-size:14px;cursor:pointer}.footer{text-align:center;color:#727986;font-size:12px;margin-top:14px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;background:#f7f6f1;color:#111;padding:10px 14px;border-radius:999px;font-weight:800;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.stats div:last-child{grid-column:1/-1}}
+</style></head>
+<body><main class="app">
+<div class="topline"><div class="badge">⚠️ Humor vulgar · V2</div><div class="mode" id="mode">Modo: —</div></div>
+<h1>Insultómetro</h1><p class="lead">Seis estructuras, compatibilidad entre profesiones y actividades, rareza ponderada y un Jackpot ocasional para verdaderas obras maestras.</p>
+<section class="card">
+<div id="insult" class="insult" aria-live="polite"></div>
+<div class="controls"><button class="primary" id="generate">Otra, cabrón</button><button id="copy">Copiar</button><button id="clear">Limpiar historial</button></div>
+<div class="stats"><div><strong>100</strong><span>Intensificadores</span></div><div><strong>100</strong><span>Oficios</span></div><div><strong>100</strong><span>Objetos explícitos</span></div><div><strong>100</strong><span>Adjetivos</span></div><div><strong>100</strong><span>Actividades</span></div></div>
+<div class="templates"><h2>Estructuras V2</h2><div class="chips"><span class="chip">40% Clásico</span><span class="chip">20% Especialista</span><span class="chip">15% Certificado</span><span class="chip">10% Académico</span><span class="chip">5% Burocrático</span><span class="chip">10% Punchline</span><span class="chip">1.5% Jackpot</span></div></div>
+<div class="history"><h2>Últimas creaciones</h2><div id="history" class="history-list"></div></div>
+</section><div class="footer">Generación inteligente local · barra espaciadora = otra barbaridad</div>
+</main><div id="toast" class="toast">Copiado</div>
+<script>
+const DB={"intensificadores": ["Grandísimo", "Reverendo", "Soberano", "Monumental", "Supremo", "Legendario", "Tremendo", "Absoluto", "Majestuoso", "Colosal", "Titánico", "Imperial", "Estratosférico", "Descomunal", "Formidable", "Ilustre", "Magno", "Superlativo", "Glorioso", "Excelentísimo", "Proverbial", "Histórico", "Mítico", "Épico", "Apoteósico", "Fenomenal", "Estelar", "Galáctico", "Interplanetario", "Cósmico", "Atómico", "Nuclear", "Volcánico", "Sísmico", "Gargantuesco", "Mastodóntico", "Prodigioso", "Espectacular", "Sensacional", "Extraordinario", "Rimbombante", "Pomposo", "Solemne", "Venerable", "Excelso", "Eminente", "Celebrado", "Laureado", "Consagrado", "Veterano", "Profesional", "Certificado", "Homologado", "Acreditado", "Colegiado", "Catedrático", "Académico", "Institucional", "Corporativo", "Ejecutivo", "Ministerial", "Diplomático", "Pontificio", "Monárquico", "Dinástico", "Hereditario", "Ancestral", "Milenario", "Prehistórico", "Medieval", "Renacentista", "Barroco", "Victoriano", "Posmoderno", "Pinche", "Maldito", "Puto", "Jodido", "Miserable", "Cabrón", "Desgraciado", "Infame", "Repugnante", "Cochino", "Cerdo", "Asqueroso", "Sarnoso", "Apestoso", "Rastrero", "Patético", "Ridículo", "Tristísimo", "Impresentable", "Detestable", "Despreciable", "Degenerado", "Mugroso", "Siniestro", "Perverso", "Malnacido"], "oficios": ["sommelier", "catador", "degustador", "coleccionista", "historiador", "inspector", "curador", "especialista", "arqueólogo", "archivero", "bibliotecario", "cronista", "anticuario", "tasador", "perito", "consultor", "asesor", "auditor", "notario", "registrador", "certificador", "evaluador", "investigador", "académico", "catedrático", "profesor", "doctor", "cirujano", "terapeuta", "nutriólogo", "ingeniero", "arquitecto", "diseñador", "programador", "analista", "estadístico", "actuario", "contador", "economista", "banquero", "corredor", "inversionista", "empresario", "emprendedor", "mercadólogo", "publicista", "relacionista", "periodista", "editor", "columnista", "escritor", "poeta", "dramaturgo", "guionista", "director", "productor", "fotógrafo", "camarógrafo", "locutor", "comentarista", "narrador", "presentador", "influencer", "podcaster", "streamer", "gamer", "entrenador", "árbitro", "scout", "representante", "agente", "manager", "promotor", "organizador", "coordinador", "supervisor", "gerente", "director ejecutivo", "vicepresidente", "presidente", "ministro", "embajador", "cónsul", "diplomático", "almirante", "capitán", "comandante", "sargento", "explorador", "navegante", "piloto", "astronauta", "cosmonauta", "astrónomo", "astrólogo", "alquimista", "hechicero", "oráculo", "monje", "maestro"], "objetos": [{"genero": "f", "palabra": "vergas"}, {"genero": "f", "palabra": "vergas ajenas"}, {"genero": "f", "palabra": "vergas enormes"}, {"genero": "f", "palabra": "vergas diminutas"}, {"genero": "f", "palabra": "vergas gruesas"}, {"genero": "f", "palabra": "vergas delgadas"}, {"genero": "f", "palabra": "vergas largas"}, {"genero": "f", "palabra": "vergas cortas"}, {"genero": "f", "palabra": "vergas de desconocidos"}, {"genero": "f", "palabra": "vergas de campeonato"}, {"genero": "f", "palabra": "vergas de colección"}, {"genero": "f", "palabra": "vergas de importación"}, {"genero": "f", "palabra": "vergas de exportación"}, {"genero": "f", "palabra": "vergas premium"}, {"genero": "f", "palabra": "vergas artesanales"}, {"genero": "f", "palabra": "vergas industriales"}, {"genero": "f", "palabra": "vergas ceremoniales"}, {"genero": "f", "palabra": "vergas internacionales"}, {"genero": "f", "palabra": "vergas clandestinas"}, {"genero": "f", "palabra": "vergas de dudosa procedencia"}, {"genero": "f", "palabra": "pollas"}, {"genero": "f", "palabra": "pollas ajenas"}, {"genero": "f", "palabra": "pollas enormes"}, {"genero": "f", "palabra": "pollas diminutas"}, {"genero": "f", "palabra": "pollas gruesas"}, {"genero": "f", "palabra": "pollas delgadas"}, {"genero": "f", "palabra": "pollas largas"}, {"genero": "f", "palabra": "pollas cortas"}, {"genero": "f", "palabra": "pollas de desconocidos"}, {"genero": "f", "palabra": "pollas de campeonato"}, {"genero": "f", "palabra": "pollas de colección"}, {"genero": "f", "palabra": "pollas de importación"}, {"genero": "f", "palabra": "pollas de exportación"}, {"genero": "f", "palabra": "pollas premium"}, {"genero": "f", "palabra": "pollas artesanales"}, {"genero": "f", "palabra": "pollas industriales"}, {"genero": "f", "palabra": "pollas ceremoniales"}, {"genero": "f", "palabra": "pollas internacionales"}, {"genero": "f", "palabra": "pollas clandestinas"}, {"genero": "f", "palabra": "pollas de dudosa procedencia"}, {"genero": "f", "palabra": "pijas"}, {"genero": "f", "palabra": "pijas ajenas"}, {"genero": "f", "palabra": "pijas enormes"}, {"genero": "f", "palabra": "pijas diminutas"}, {"genero": "f", "palabra": "pijas gruesas"}, {"genero": "f", "palabra": "pijas delgadas"}, {"genero": "f", "palabra": "pijas largas"}, {"genero": "f", "palabra": "pijas cortas"}, {"genero": "f", "palabra": "pijas de desconocidos"}, {"genero": "f", "palabra": "pijas de campeonato"}, {"genero": "f", "palabra": "pijas de colección"}, {"genero": "f", "palabra": "pijas de importación"}, {"genero": "f", "palabra": "pijas de exportación"}, {"genero": "f", "palabra": "pijas premium"}, {"genero": "f", "palabra": "pijas artesanales"}, {"genero": "f", "palabra": "pijas industriales"}, {"genero": "f", "palabra": "pijas ceremoniales"}, {"genero": "f", "palabra": "pijas internacionales"}, {"genero": "f", "palabra": "pijas clandestinas"}, {"genero": "f", "palabra": "pijas de dudosa procedencia"}, {"genero": "f", "palabra": "porongas"}, {"genero": "f", "palabra": "porongas ajenas"}, {"genero": "f", "palabra": "porongas enormes"}, {"genero": "f", "palabra": "porongas diminutas"}, {"genero": "f", "palabra": "porongas gruesas"}, {"genero": "f", "palabra": "porongas delgadas"}, {"genero": "f", "palabra": "porongas largas"}, {"genero": "f", "palabra": "porongas cortas"}, {"genero": "f", "palabra": "porongas de desconocidos"}, {"genero": "f", "palabra": "porongas de campeonato"}, {"genero": "f", "palabra": "porongas de colección"}, {"genero": "f", "palabra": "porongas de importación"}, {"genero": "f", "palabra": "porongas de exportación"}, {"genero": "f", "palabra": "porongas premium"}, {"genero": "f", "palabra": "porongas artesanales"}, {"genero": "f", "palabra": "porongas industriales"}, {"genero": "f", "palabra": "porongas ceremoniales"}, {"genero": "f", "palabra": "porongas internacionales"}, {"genero": "f", "palabra": "porongas clandestinas"}, {"genero": "f", "palabra": "porongas de dudosa procedencia"}, {"genero": "f", "palabra": "pingas"}, {"genero": "f", "palabra": "pingas ajenas"}, {"genero": "f", "palabra": "pingas enormes"}, {"genero": "f", "palabra": "pingas diminutas"}, {"genero": "f", "palabra": "pingas gruesas"}, {"genero": "f", "palabra": "pingas delgadas"}, {"genero": "f", "palabra": "pingas largas"}, {"genero": "f", "palabra": "pingas cortas"}, {"genero": "f", "palabra": "pingas de desconocidos"}, {"genero": "f", "palabra": "pingas de campeonato"}, {"genero": "f", "palabra": "pingas de colección"}, {"genero": "f", "palabra": "pingas de importación"}, {"genero": "f", "palabra": "pingas de exportación"}, {"genero": "f", "palabra": "pingas premium"}, {"genero": "f", "palabra": "pingas artesanales"}, {"genero": "f", "palabra": "pingas industriales"}, {"genero": "f", "palabra": "pingas ceremoniales"}, {"genero": "f", "palabra": "pingas internacionales"}, {"genero": "f", "palabra": "pingas clandestinas"}, {"genero": "f", "palabra": "pingas de dudosa procedencia"}], "adjetivos": [{"m": "intergalácticos", "f": "intergalácticas"}, {"m": "ancestrales", "f": "ancestrales"}, {"m": "torcidos", "f": "torcidas"}, {"m": "legendarios", "f": "legendarias"}, {"m": "premium", "f": "premium"}, {"m": "rancios", "f": "rancias"}, {"m": "sudados", "f": "sudadas"}, {"m": "venosos", "f": "venosas"}, {"m": "peludos", "f": "peludas"}, {"m": "pringosos", "f": "pringosas"}, {"m": "hediondos", "f": "hediondas"}, {"m": "apestosos", "f": "apestosas"}, {"m": "babosos", "f": "babosas"}, {"m": "pegajosos", "f": "pegajosas"}, {"m": "grasientos", "f": "grasientas"}, {"m": "arrugados", "f": "arrugadas"}, {"m": "resecos", "f": "resecas"}, {"m": "mohosos", "f": "mohosas"}, {"m": "chuecos", "f": "chuecas"}, {"m": "deformes", "f": "deformes"}, {"m": "descomunales", "f": "descomunales"}, {"m": "monumentales", "f": "monumentales"}, {"m": "microscópicos", "f": "microscópicas"}, {"m": "prehistóricos", "f": "prehistóricas"}, {"m": "medievales", "f": "medievales"}, {"m": "victorianos", "f": "victorianas"}, {"m": "barrocos", "f": "barrocas"}, {"m": "renacentistas", "f": "renacentistas"}, {"m": "cósmicos", "f": "cósmicas"}, {"m": "radioactivos", "f": "radioactivas"}, {"m": "nucleares", "f": "nucleares"}, {"m": "supersónicos", "f": "supersónicas"}, {"m": "subterráneos", "f": "subterráneas"}, {"m": "subacuáticos", "f": "subacuáticas"}, {"m": "extraterrestres", "f": "extraterrestres"}, {"m": "interdimensionales", "f": "interdimensionales"}, {"m": "cuánticos", "f": "cuánticas"}, {"m": "metafísicos", "f": "metafísicas"}, {"m": "esotéricos", "f": "esotéricas"}, {"m": "místicos", "f": "místicas"}, {"m": "rituales", "f": "rituales"}, {"m": "ceremoniales", "f": "ceremoniales"}, {"m": "litúrgicos", "f": "litúrgicas"}, {"m": "pontificios", "f": "pontificias"}, {"m": "diplomáticos", "f": "diplomáticas"}, {"m": "ministeriales", "f": "ministeriales"}, {"m": "presidenciales", "f": "presidenciales"}, {"m": "corporativos", "f": "corporativas"}, {"m": "ejecutivos", "f": "ejecutivas"}, {"m": "sindicales", "f": "sindicales"}, {"m": "burocráticos", "f": "burocráticas"}, {"m": "certificados", "f": "certificadas"}, {"m": "homologados", "f": "homologadas"}, {"m": "auditados", "f": "auditadas"}, {"m": "calibrados", "f": "calibradas"}, {"m": "patentados", "f": "patentadas"}, {"m": "registrados", "f": "registradas"}, {"m": "importados", "f": "importadas"}, {"m": "exportados", "f": "exportadas"}, {"m": "reacondicionados", "f": "reacondicionadas"}, {"m": "coleccionables", "f": "coleccionables"}, {"m": "numerados", "f": "numeradas"}, {"m": "firmados", "f": "firmadas"}, {"m": "autografiados", "f": "autografiadas"}, {"m": "deportivos", "f": "deportivas"}, {"m": "olímpicos", "f": "olímpicas"}, {"m": "profesionales", "f": "profesionales"}, {"m": "reglamentarios", "f": "reglamentarias"}, {"m": "competitivos", "f": "competitivas"}, {"m": "aerodinámicos", "f": "aerodinámicas"}, {"m": "hidráulicos", "f": "hidráulicas"}, {"m": "neumáticos", "f": "neumáticas"}, {"m": "telescópicos", "f": "telescópicas"}, {"m": "retráctiles", "f": "retráctiles"}, {"m": "plegables", "f": "plegables"}, {"m": "portátiles", "f": "portátiles"}, {"m": "digitales", "f": "digitales"}, {"m": "analógicos", "f": "analógicas"}, {"m": "inteligentes", "f": "inteligentes"}, {"m": "automatizados", "f": "automatizadas"}, {"m": "ergonómicos", "f": "ergonómicas"}, {"m": "biodegradables", "f": "biodegradables"}, {"m": "sustentables", "f": "sustentables"}, {"m": "orgánicos", "f": "orgánicas"}, {"m": "ecológicos", "f": "ecológicas"}, {"m": "gourmet", "f": "gourmet"}, {"m": "ahumados", "f": "ahumadas"}, {"m": "curados", "f": "curadas"}, {"m": "madurados", "f": "maduradas"}, {"m": "fermentados", "f": "fermentadas"}, {"m": "marinados", "f": "marinadas"}, {"m": "glaseados", "f": "glaseadas"}, {"m": "crujientes", "f": "crujientes"}, {"m": "aterciopelados", "f": "aterciopeladas"}, {"m": "aromáticos", "f": "aromáticas"}, {"m": "picantes", "f": "picantes"}, {"m": "agridulces", "f": "agridulces"}, {"m": "exóticos", "f": "exóticas"}, {"m": "tropicales", "f": "tropicales"}, {"m": "nórdicos", "f": "nórdicas"}], "actividades": ["degustación", "cata", "inspección", "clasificación", "selección", "evaluación", "certificación", "calibración", "medición", "comparación", "catalogación", "inventariado", "registro", "documentación", "archivo", "conservación", "restauración", "preservación", "almacenamiento", "embalaje", "importación", "exportación", "distribución", "logística", "transporte", "recepción", "entrega", "control de calidad", "auditoría", "trazabilidad", "investigación", "análisis", "estudio", "observación", "monitoreo", "supervisión", "peritaje", "tasación", "valoración", "autenticación", "curaduría", "coleccionismo", "exhibición", "museografía", "fotografía", "filmación", "reseña", "crítica", "divulgación", "docencia", "capacitación", "entrenamiento", "asesoría", "consultoría", "gestión", "administración", "dirección", "coordinación", "planeación", "estrategia", "mercadotecnia", "publicidad", "promoción", "relaciones públicas", "branding", "posicionamiento", "comercialización", "venta", "compra", "negociación", "licitación", "contratación", "aprovisionamiento", "abastecimiento", "manufactura", "producción", "ensamblaje", "mantenimiento", "reparación", "lubricación", "higienización", "desinfección", "esterilización", "pulido", "acabado", "empaque", "etiquetado", "numeración", "certificación notarial", "registro sanitario", "control aduanero", "análisis sensorial", "pruebas de resistencia", "pruebas de campo", "benchmarking", "inteligencia de mercado", "investigación histórica", "documentación técnica", "normalización", "estandarización"], "titulos": ["Licenciado", "Ingeniero", "Maestro", "Máster", "Doctor", "Doctor honoris causa", "Catedrático", "Profesor emérito", "Investigador titular", "Perito certificado", "Especialista", "Diplomado", "Técnico superior", "Académico de número", "Decano", "Rector", "Director de cátedra", "Jefe de departamento", "Coordinador académico", "Investigador emérito", "Consultor senior", "Auditor líder", "Inspector general", "Tasador oficial", "Curador jefe"], "remates": ["y exigente con la calidad", "porque cualquiera no le sirve", "con años de experiencia comprobable", "y orgulloso de su trayectoria", "por vocación, no por necesidad", "con referencias disponibles", "y sin planes de jubilarse", "especialmente los fines de semana", "según consta en actas", "reconocido por sus colegas", "con cartera de clientes recurrentes", "y con estándares altísimos", "por recomendación familiar", "con agenda llena hasta diciembre", "y siempre dispuesto a una segunda opinión", "con disponibilidad inmediata", "con experiencia nacional e internacional", "y sin miedo a los proyectos grandes", "con especial atención al detalle", "con resultados verificables", "y pasión por el oficio", "con servicio personalizado", "por cita previa", "con atención los siete días de la semana", "con más horas de vuelo de las recomendables", "con trayectoria en el sector público y privado", "y absoluta discreción profesional", "con especialidad en casos difíciles", "con certificaciones que nadie pidió", "y una reputación que lo precede"], "buro": ["según el expediente", "de conformidad con la normativa vigente", "con folio debidamente sellado", "previa cita y con identificación oficial", "bajo protesta de decir verdad", "según consta en el acta", "con firma autógrafa", "para efectos administrativos", "con copia para el interesado", "sin responsabilidad para la institución", "sujeto a disponibilidad", "conforme al manual operativo", "en términos del reglamento", "con visto bueno del supervisor", "pendiente de auditoría", "con dictamen favorable", "con sello y firma", "debidamente protocolizado", "en original y dos copias", "con acuse de recibo"]};
+const $=s=>document.querySelector(s);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+let actual="";
+let historial=[];
+let recientes={oficios:[],objetos:[],adjetivos:[],actividades:[]};
+
+const MAX_RECIENTES=4;
+
+function guardarReciente(tipo,valor){
+  recientes[tipo].unshift(valor);
+  recientes[tipo]=recientes[tipo].slice(0,MAX_RECIENTES);
+}
+
+function pickNoReciente(arr,tipo,getValue=x=>x){
+  const disponibles=arr.filter(x=>!recientes[tipo].includes(getValue(x)));
+  const pool=disponibles.length?disponibles:arr;
+  const elegido=pick(pool);
+  guardarReciente(tipo,getValue(elegido));
+  return elegido;
+}
+
+// Palabras relativamente comunes vs. raras.
+// Las raras aparecen menos para que conserven efecto sorpresa.
+function weightedPick(arr, rareSet=new Set(), rareWeight=.22){
+  const weighted=[];
+  arr.forEach(x=>{
+    const key=typeof x==="string"?x:(x.palabra||x.m||"");
+    const n=rareSet.has(key)?Math.max(1,Math.round(10*rareWeight)):10;
+    for(let i=0;i<n;i++) weighted.push(x);
+  });
+  return pick(weighted);
+}
+
+const rareIntensificadores=new Set([
+  "Pontificio","Interplanetario","Cósmico","Milenario","Victoriano",
+  "Doctorado","Ministerial","Monárquico","Renacentista","Posmoderno"
+]);
+
+const rareAdjetivos=new Set([
+  "interdimensionales","cuánticos","metafísicos","litúrgicos","pontificios",
+  "radioactivos","supersónicos","victorianos","prehistóricos","telescópicos"
+]);
+
+const perfiles={
+  gastronomico:{
+    oficios:["sommelier","catador","degustador","chef","nutriólogo"],
+    actividades:["degustación","cata","selección","evaluación","análisis sensorial","control de calidad"]
+  },
+  academico:{
+    oficios:["historiador","investigador","académico","catedrático","profesor","arqueólogo","cronista","bibliotecario","archivero"],
+    actividades:["investigación","análisis","estudio","documentación","archivo","catalogación","investigación histórica","divulgación","docencia"]
+  },
+  tecnico:{
+    oficios:["ingeniero","inspector","perito","auditor","certificador","evaluador","analista","estadístico","actuario","supervisor"],
+    actividades:["inspección","certificación","calibración","medición","comparación","auditoría","control de calidad","pruebas de resistencia","estandarización","aseguramiento de calidad"]
+  },
+  burocratico:{
+    oficios:["notario","registrador","auditor","director ejecutivo","vicepresidente","presidente","ministro","embajador","cónsul","diplomático"],
+    actividades:["registro","documentación","certificación notarial","licitación","contratación","gestión","administración","control aduanero","normalización"]
+  },
+  comercial:{
+    oficios:["consultor","asesor","empresario","emprendedor","mercadólogo","publicista","relacionista","agente","manager","promotor"],
+    actividades:["consultoría","asesoría","mercadotecnia","publicidad","promoción","relaciones públicas","branding","posicionamiento","comercialización","venta","negociación"]
+  }
+};
+
+function perfilDeOficio(oficio){
+  for(const [nombre,p] of Object.entries(perfiles)){
+    if(p.oficios.includes(oficio)) return p;
+  }
+  return null;
+}
+
+function pickActividadCompatible(oficio){
+  const perfil=perfilDeOficio(oficio);
+  let pool=perfil ? perfil.actividades.filter(a=>DB.actividades.includes(a)) : DB.actividades;
+  if(!pool.length) pool=DB.actividades;
+  return pickNoReciente(pool,"actividades",x=>x);
+}
+
+function pickIntensificador(){
+  return weightedPick(DB.intensificadores,rareIntensificadores,.18);
+}
+
+function pickAdjetivo(obj){
+  const candidatos=DB.adjetivos.filter(a=>!recientes.adjetivos.includes(a.m));
+  const pool=candidatos.length?candidatos:DB.adjetivos;
+  const elegido=weightedPick(pool,rareAdjetivos,.18);
+  guardarReciente("adjetivos",elegido.m);
+  return obj.genero==="f"?elegido.f:elegido.m;
+}
+
+function piezas(){
+  const oficio=pickNoReciente(DB.oficios,"oficios",x=>x);
+  const obj=pickNoReciente(DB.objetos,"objetos",x=>x.palabra);
+  const actividad=pickActividadCompatible(oficio);
+  return{
+    i:pickIntensificador(),
+    oficio,
+    obj:obj.palabra,
+    adj:pickAdjetivo(obj),
+    actividad
+  };
+}
+
+function jackpot(){
+  const p=piezas();
+  const titulo=pick(DB.titulos);
+  const actividad2=pickActividadCompatible(p.oficio);
+  const remate=pick(DB.remates);
+  return{
+    modo:"🔥 JACKPOT",
+    texto:`${p.i} ${p.oficio}, ${titulo.toLowerCase()} en ${p.actividad} y ${actividad2} de ${p.obj} ${p.adj}, ${remate}.`
+  };
+}
+
+function crear(){
+  // ~1.5% de probabilidad. Raro a propósito.
+  if(Math.random()<0.015) return jackpot();
+
+  const p=piezas();
+  const r=Math.random()*100;
+
+  if(r<40) return{modo:"Clásico",texto:`${p.i} ${p.oficio} de ${p.obj} ${p.adj}.`};
+
+  if(r<60) return{
+    modo:"Especialista",
+    texto:`${p.i} ${p.oficio}, especialista en ${p.actividad} de ${p.obj} ${p.adj}.`
+  };
+
+  if(r<75) return{
+    modo:"Certificado",
+    texto:`${p.i} ${p.oficio} certificado en ${p.actividad} de ${p.obj} ${p.adj}.`
+  };
+
+  if(r<85) return{
+    modo:"Académico",
+    texto:`${pick(DB.titulos)} en ${p.actividad} de ${p.obj} ${p.adj}.`
+  };
+
+  if(r<90) return{
+    modo:"Burocrático",
+    texto:`${p.i} ${p.oficio} encargado de ${p.actividad} de ${p.obj} ${p.adj}, ${pick(DB.buro)}.`
+  };
+
+  return{
+    modo:"Punchline",
+    texto:`${p.i} ${p.oficio} de ${p.obj} ${p.adj}, ${pick(DB.remates)}.`
+  };
+}
+
+function pintar(x){
+  actual=x.texto;
+  $("#mode").textContent=`Modo: ${x.modo}`;
+  const c=x.texto.indexOf(",");
+  if((x.modo==="Punchline"||x.modo==="🔥 JACKPOT")&&c>=0){
+    $("#insult").innerHTML=`<span>${x.texto.slice(0,c)}<em>${x.texto.slice(c)}</em></span>`;
+  }else{
+    $("#insult").textContent=x.texto;
+  }
+}
+
+function render(){
+  const h=$("#history");
+  h.innerHTML="";
+  historial.forEach(x=>{
+    const d=document.createElement("div");
+    d.className="history-item";
+    d.textContent=`${x.modo} · ${x.texto}`;
+    d.onclick=()=>pintar(x);
+    h.appendChild(d);
+  });
+}
+
+function generar(){
+  let x=crear();
+  while(x.texto===actual) x=crear();
+  pintar(x);
+  historial.unshift(x);
+  historial=historial.slice(0,6);
+  render();
+}
+
+function toast(m){
+  const t=$("#toast");
+  t.textContent=m;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),1200);
+}
+
+$("#generate").onclick=generar;
+$("#copy").onclick=async()=>{
+  try{
+    await navigator.clipboard.writeText(actual);
+    toast("Copiado");
+  }catch{
+    const t=document.createElement("textarea");
+    t.value=actual;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand("copy");
+    t.remove();
+    toast("Copiado");
+  }
+};
+$("#clear").onclick=()=>{
+  historial=[];
+  recientes={oficios:[],objetos:[],adjetivos:[],actividades:[]};
+  render();
+  toast("Historial limpio");
+};
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&e.target===document.body){
+    e.preventDefault();
+    generar();
+  }
+});
+generar();
+</script></body></html>
